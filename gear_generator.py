@@ -18,7 +18,7 @@ test_gear = {
     'module': 2.5,
     'pressureAngle' : 20.0,
     'thickness': 10.0,
-    'boreDiameter': 5.0,
+    'boreDiameter': 30,
     'filletRadius': 0.5
 }
 
@@ -45,7 +45,7 @@ phi_max = math.sqrt((addendum_dia / base_dia)**2 - 1)
 phi_pitch = math.sqrt((pitch_dia / base_dia)**2 -1)
 
 # Calculate the involute
-num_points = 15
+num_points = 30
 involute_points = []
 for i in range(num_points):
 
@@ -63,8 +63,13 @@ involute_at_pitch = involute.intersect(Circle(pitch_dia / 2))[0].position_at(1)
 d = math.sqrt(involute_at_pitch.X ** 2 + (involute_at_pitch.Y - pitch_dia/2) ** 2) / 2
 theta_bias = 2 * math.asin(d / pitch_dia)
 
+# Convert the backlash into rad
+dbacklash = 0.1
+phi_backlash = 2 * math.asin(dbacklash/(2*pitch_dia))
+
 # Create rotated involute points for the other side
-z_rotation_rad = theta_bias - math.pi / (2 * num_teeth)
+z_rotation_rad = theta_bias - math.pi / (2 * num_teeth) - phi_backlash
+print(theta_bias, math.pi/(2*num_teeth), phi_backlash)
 
 # Rotate each point
 involute_points_rotated = []
@@ -91,6 +96,10 @@ tooth_cutter = extrude(tooth_face, amount=thickness, both=True)
 
 gear -= PolarLocations(radius=0, count=num_teeth) * tooth_cutter
 
+bore = Cylinder(bore_diameter/2.0, thickness) 
+gear -= bore
+
+
 # for debugging 
 debug_circles = []
 debug_circles.append(["addendum_circle", Circle(addendum_dia / 2)])
@@ -104,4 +113,5 @@ debug_sketch = [(name, Plane(gear.faces().sort_by().last) * circle) for name, ci
 #    show_object(sketch, name=name)
 show_object(gear)
 #show_object(involute_rotated)
+export_stl(gear, r'C:\00free\2026\code\gear_generator_python\gear.stl')
 show_object(cut)
